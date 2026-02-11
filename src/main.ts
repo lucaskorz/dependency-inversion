@@ -1,23 +1,15 @@
+import 'reflect-metadata';
+
 import fastify from "fastify";
-import { SESGateway } from "./gateways/SESGateway.js";
-import { SQSGateway } from "./gateways/SQSGateway.js";
-import { DynamoOrdersRepository } from "./repository/DynamoOrdersRepository.js";
 import { PlaceOrder } from "./useCases/PlaceOrder.js";
+import { container } from './di/Container.js';
 
 const app = fastify();
 
 app.post("/orders", async (request, reply) => {
-  const dynamoOrdersRepository = new DynamoOrdersRepository();
-  const sqsGateway = new SQSGateway();
-  const sesGateway = new SESGateway();
+  const placeOrder = container.resolve<PlaceOrder>('PlaceOrder');
 
-  const placeHolder = new PlaceOrder(
-    dynamoOrdersRepository,
-    sqsGateway,
-    sesGateway,
-  );
-
-  const { orderId } = await placeHolder.execute();
+  const { orderId } = await placeOrder.execute();
 
   reply.status(201).send({ orderId });
 });

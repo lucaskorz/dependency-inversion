@@ -1,9 +1,14 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import type { Order } from "../entities/Order.js";
+import type { IOrdersRepository } from "../interfaces/repositories/IOrdersRepository.js";
+import type { ILogGateway } from "../interfaces/gateways/ILogGateway.js";
+import { Inject } from "../di/Inject.js";
 
-export class DynamoOrdersRepository {
+export class DynamoOrdersRepository implements IOrdersRepository {
   private client = DynamoDBDocumentClient.from(new DynamoDBClient());
+
+  constructor(@Inject('LogGateway') private readonly logGateway: ILogGateway) { }
 
   async create(order: Order): Promise<void> {
     const command = new PutCommand({
@@ -14,6 +19,8 @@ export class DynamoOrdersRepository {
         amount: order.amount,
       },
     });
+
+    await this.logGateway.log({ ...order });
 
     await this.client.send(command);
   }

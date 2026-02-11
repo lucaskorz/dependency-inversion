@@ -1,13 +1,7 @@
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
+import type { IEmailGateway, ISendEmailParams } from "../interfaces/gateways/IEmailGateway.js";
 
-interface ISendEmailParams {
-  from: string;
-  to: string[];
-  subject: string;
-  html: string;
-}
-
-export class SESGateway {
+export class SESGateway implements IEmailGateway {
   private client = new SESClient();
 
   async sendEmail({
@@ -35,6 +29,6 @@ export class SESGateway {
       },
     });
 
-    await this.client.send(command);
+    //await this.client.send(command);
   }
 }

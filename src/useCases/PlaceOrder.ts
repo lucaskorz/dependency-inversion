@@ -1,14 +1,15 @@
+import { Inject } from "../di/Inject.js";
 import { Order } from "../entities/Order.js";
-import { SESGateway } from "../gateways/SESGateway.js";
-import { SQSGateway } from "../gateways/SQSGateway.js";
-import { DynamoOrdersRepository } from "../repository/DynamoOrdersRepository.js";
+import type { IEmailGateway } from "../interfaces/gateways/IEmailGateway.js";
+import type { IQueueGateway } from "../interfaces/gateways/IQueueGateway.js";
+import type { IOrdersRepository } from "../interfaces/repositories/IOrdersRepository.js";
 
 export class PlaceOrder {
   constructor(
-    private readonly dynamoRepository: DynamoOrdersRepository,
-    private readonly sqsGateway: SQSGateway,
-    private readonly sesGateway: SESGateway,
-  ) {}
+    @Inject('OrderRepository') private readonly dynamoRepository: IOrdersRepository,
+    @Inject('QueueGateway') private readonly queueGateway: IQueueGateway,
+    @Inject('EmailGateway') private readonly emailGateway: IEmailGateway,
+  ) { }
 
   async execute() {
     const customerEmail = "lucaskorzdj@gmail.com";
@@ -17,8 +18,8 @@ export class PlaceOrder {
     const order = new Order(customerEmail, amount);
 
     await this.dynamoRepository.create(order);
-    await this.sqsGateway.publishMessage({ orderId: order.id });
-    await this.sesGateway.sendEmail({
+    await this.queueGateway.publishMessage({ orderId: order.id });
+    await this.emailGateway.sendEmail({
       from: "JStore <noreply@lucas.dev.br",
       to: [order.email],
       subject: `Pedido #${order.id} confirmado!`,
